@@ -10,6 +10,14 @@ library(tidyverse)
 library(bslib)
 library(plotly)
 
+require(rgdal)
+require(leaflet)
+require(leaflet.extras)
+
+require(dplyr)
+require(readxl)
+require(stringr)
+
 LAPD <- read_csv('LAPD_updated.csv')
 
 # Avoid plotly issues ----------------------------------------------
@@ -47,7 +55,10 @@ sidebar <- dashboardSidebar(
     switchInput(inputId = "time", 
                 value=TRUE,
                 onLabel= c("date" = "Day"), 
-                offLabel= c("week"= "Week"))
+                offLabel= c("week"= "Week")), 
+    
+    # one more menu item
+    menuItem("Maps", icon = icon("map-marked-alt"), tabName = "maps")
     
   )
 )
@@ -93,6 +104,27 @@ body <- dashboardBody(tabItems(
                    tabPanel("By Offense", plotlyOutput("protest_offense")),
                    tabPanel("Table",  DT::dataTableOutput("protest_table")))
           )
+  ),
+  
+  tabItem("maps",
+          # Input and Value Boxes ----------------------------------------------
+          #more input boxes: offense type
+          
+          # Map ----------------------------------------------
+          
+          
+          fluidRow(
+            tabBox(title = "Maps",
+                   width = 12,
+                   # Using Shiny JS
+                   shinyjs::useShinyjs(),
+                   # Style the background and change the page
+                   tags$style(type = "text/css", ".leaflet {height: calc(100vh - 90px) !important;}
+                              body {background-color: #D4EFDF;}"),
+                   # Map Output
+                   leafletOutput("leaflet")
+                  # tabPanel("Table",  DT::dataTableOutput("protest_table"))
+          ))
   )
 )
 )
@@ -101,6 +133,13 @@ ui <- dashboardPage(header, sidebar, body)
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  
+  # Basic Map
+  output$leaflet <- renderLeaflet({
+    leaflet() %>%
+      addTiles(urlTemplate = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", attribution = "Google", group = "Google") %>%
+      setView(-118.4, 33, 9)
+  })
   
   # Create a subset of data filtering for selected title types ------
   LAPD_subset_COVID <- reactive({
@@ -111,6 +150,11 @@ server <- function(input, output) {
   LAPD_subset_PROTEST <- reactive({
     req(input$selected_hood) # ensure availablity of value before proceeding
     filter(LAPD, `Area Name` %in% input$selected_hood & week %in% c(21:23))
+  })
+  
+  LAPD_subset <- reactive({
+    req(input$selected_hood) # ensure availablity of value before proceeding
+    filter(LAPD, `Area Name` %in% input$selected_hood)
   })
   
   # Covid tab --------------------------------------------------------
@@ -232,6 +276,22 @@ server <- function(input, output) {
     
     valueBox(val,"Arrests for curfew violations in the two weeks following the death of George Floyd", color = "olive")
   })
+  
+  # Map tab ----------------------------------------
+  
+  # Replace layer with filtered LAPD dataset
+  observe({
+    subs <- LAPD_subset()
+    arrpal <- colorFactor(c("#33cc33", "#ff9933", "#cc99ff"), c("B", "W", "H"))
+    # Data is greenInf
+    leafletProxy("leaflet", data = subs) %>%
+      # In this case either lines 92 or 93 will work
+      clearMarkers() %>%
+      #clearGroup(group = "greenInf") %>%
+      addCircleMarkers(data = subs, lng = ~LON, lat = ~LAT, radius = 0.5, color = ~arrpal(`Descent Code`)) %>%
+      addLegend(position = "topright" , pal= arrpal, values = subs$`Descent Code`, title = "Race and Ethnicity")
+  })
+  
   
 }
 
