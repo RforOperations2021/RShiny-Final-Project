@@ -278,18 +278,27 @@ server <- function(input, output) {
   })
   
   # Map tab ----------------------------------------
-  
-  # Replace layer with filtered LAPD dataset
+    # Replace layer with filtered LAPD dataset
   observe({
+    # if(input$group == "Race and Ethnicity"){
+    #   arrpal <- colorFactor(c("#33cc33", "#ff9933", "#cc99ff"), c("B", "W", "H"))
+    # }else if(input$group == "Sex"){
+    #   arrpal <- colorFactor(c("#33cc33", "#ff9933"), c("M", "F"))
+    # }else{
+    #   arrpal <- colorFactor(c("#33cc33", "#ff9933", "#cc99ff", "#ff0000", "#cccc00"), c("M", "F", "D", "I", "O"))
+    # }
+    LAPD_subset()$Selected <- LAPD_subset()[[input$group]]
     subs <- LAPD_subset()
-    arrpal <- colorFactor(c("#33cc33", "#ff9933", "#cc99ff"), c("B", "W", "H"))
+    arrpal <- colorFactor(topo.colors(length(unique(subs$Selected))), unique(subs$Selected))
+    
     # Data is greenInf
     leafletProxy("leaflet", data = subs) %>%
       # In this case either lines 92 or 93 will work
       clearMarkers() %>%
+      clearControls() %>%
       #clearGroup(group = "greenInf") %>%
-      addCircleMarkers(data = subs, lng = ~LON, lat = ~LAT, radius = 0.5, color = ~arrpal(`Descent Code`)) %>%
-      addLegend(position = "topright" , pal= arrpal, values = subs$`Descent Code`, title = "Race and Ethnicity")
+      addCircleMarkers(data = subs, lng = ~LON, lat = ~LAT, radius = 0.5, color = ~arrpal(Selected)) %>%
+      addLegend(position = "topright" , pal= arrpal, values = subs$Selected, title = "Group")
   })
   
   
