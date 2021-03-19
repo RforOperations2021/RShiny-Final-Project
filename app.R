@@ -47,9 +47,9 @@ sidebar <- dashboardSidebar(
     # Select variable to group by ----------------------------------
     selectInput(inputId = "group", 
                 label = "Group Arrests by:",
-                choices = c("Race and Ethnicity" = "`Descent Code`", 
-                            "Sex" = "`Sex Code`", 
-                            "Arrest Type" = "`Arrest Type Code`")),
+                choices = c("Race and Ethnicity" = "Descent Code", 
+                            "Sex" = "Sex Code", 
+                            "Arrest Type" = "Arrest Type Code")),
     
     ### Daily vs weekly
     switchInput(inputId = "time", 
@@ -138,7 +138,7 @@ server <- function(input, output) {
   output$leaflet <- renderLeaflet({
     leaflet() %>%
       addTiles(urlTemplate = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", attribution = "Google", group = "Google") %>%
-      setView(-118.4, 33, 9)
+      setView(-118.4, 34, 9)
   })
   
   # Create a subset of data filtering for selected title types ------
@@ -278,27 +278,20 @@ server <- function(input, output) {
   })
   
   # Map tab ----------------------------------------
-    # Replace layer with filtered LAPD dataset
+    
   observe({
-    # if(input$group == "Race and Ethnicity"){
-    #   arrpal <- colorFactor(c("#33cc33", "#ff9933", "#cc99ff"), c("B", "W", "H"))
-    # }else if(input$group == "Sex"){
-    #   arrpal <- colorFactor(c("#33cc33", "#ff9933"), c("M", "F"))
-    # }else{
-    #   arrpal <- colorFactor(c("#33cc33", "#ff9933", "#cc99ff", "#ff0000", "#cccc00"), c("M", "F", "D", "I", "O"))
-    # }
     LAPD <- LAPD_subset()
     LAPD$Selected <- LAPD[[input$group]]
-    arrpal <- colorFactor(topo.colors(length(unique(subs$Selected))), unique(LAPD$Selected))
+    arrpal <- colorFactor(topo.colors(length(unique(LAPD$Selected))), unique(LAPD$Selected))
     
-    # Data is greenInf
+    
     leafletProxy("leaflet", data = LAPD) %>%
-      # In this case either lines 92 or 93 will work
+      setView(mean(LAPD$LON, na.rm=T), mean(LAPD$LAT, na.rm=T), input$leaflet_zoom) %>%
       clearMarkers() %>%
       clearControls() %>%
-      #clearGroup(group = "greenInf") %>%
       addCircleMarkers(data = LAPD, lng = ~LON, lat = ~LAT, radius = 0.5, color = ~arrpal(Selected)) %>%
       addLegend(position = "topright" , pal= arrpal, values =LAPD$Selected, title = "Group")
+    
   })
   
   
