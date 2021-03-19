@@ -116,14 +116,24 @@ body <- dashboardBody(tabItems(
           fluidRow(
             tabBox(title = "Maps",
                    width = 12,
+                   tabPanel( "Points",
                    # Using Shiny JS
                    shinyjs::useShinyjs(),
                    # Style the background and change the page
                    tags$style(type = "text/css", ".leaflet {height: calc(100vh - 90px) !important;}
                               body {background-color: #D4EFDF;}"),
                    # Map Output
-                   leafletOutput("leaflet")
-                  # tabPanel("Table",  DT::dataTableOutput("protest_table"))
+                   leafletOutput("leaflet_points")
+                  ),
+                  tabPanel("Clusters",
+                           # Using Shiny JS
+                           shinyjs::useShinyjs(),
+                           # Style the background and change the page
+                           tags$style(type = "text/css", ".leaflet {height: calc(100vh - 90px) !important;}
+                                      body {background-color: #D4EFDF;}"),
+                           # Map Output
+                           leafletOutput("leaflet_heat")       
+                           )
           ))
   )
 )
@@ -134,8 +144,15 @@ ui <- dashboardPage(header, sidebar, body)
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  # Basic Map
-  output$leaflet <- renderLeaflet({
+  # Point Map with groups
+  output$leaflet_points <- renderLeaflet({
+    leaflet() %>%
+      addTiles(urlTemplate = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", attribution = "Google", group = "Google") %>%
+      setView(-118.4, 34, 9)
+  })
+  
+  # Heat Map
+  output$leaflet_heat <- renderLeaflet({
     leaflet() %>%
       addTiles(urlTemplate = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", attribution = "Google", group = "Google") %>%
       setView(-118.4, 34, 9)
@@ -285,8 +302,8 @@ server <- function(input, output) {
     arrpal <- colorFactor(topo.colors(length(unique(LAPD$Selected))), unique(LAPD$Selected))
     
     
-    leafletProxy("leaflet", data = LAPD) %>%
-      setView(mean(LAPD$LON, na.rm=T), mean(LAPD$LAT, na.rm=T), input$leaflet_zoom) %>%
+    leafletProxy("leaflet_points", data = LAPD) %>%
+      setView(mean(LAPD$LON, na.rm=T), mean(LAPD$LAT, na.rm=T), input$leaflet_points_zoom) %>%
       clearMarkers() %>%
       clearControls() %>%
       addCircleMarkers(data = LAPD, lng = ~LON, lat = ~LAT, radius = 0.5, color = ~arrpal(Selected)) %>%
@@ -294,6 +311,16 @@ server <- function(input, output) {
     
   })
   
+  observe({
+    LAPD <- LAPD_subset()
+    
+    leafletProxy("leaflet_heat", data = LAPD) %>%
+      setView(mean(LAPD$LON, na.rm=T), mean(LAPD$LAT, na.rm=T), input$leaflet_heat_zoom) %>%
+      clearMarkers() %>%
+      clearControls() %>%
+      addCircleMarkers(data = LAPD, lng = ~LON, lat = ~LAT, radius = 1, clusterOptions = markerClusterOptions()) 
+    
+  })
   
 }
 
