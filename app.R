@@ -287,18 +287,18 @@ server <- function(input, output) {
     # }else{
     #   arrpal <- colorFactor(c("#33cc33", "#ff9933", "#cc99ff", "#ff0000", "#cccc00"), c("M", "F", "D", "I", "O"))
     # }
-    LAPD_subset()$Selected <- LAPD_subset()[[input$group]]
-    subs <- LAPD_subset()
-    arrpal <- colorFactor(topo.colors(length(unique(subs$Selected))), unique(subs$Selected))
+    LAPD <- LAPD_subset()
+    LAPD$Selected <- LAPD[[input$group]]
+    arrpal <- colorFactor(topo.colors(length(unique(subs$Selected))), unique(LAPD$Selected))
     
     # Data is greenInf
-    leafletProxy("leaflet", data = subs) %>%
+    leafletProxy("leaflet", data = LAPD) %>%
       # In this case either lines 92 or 93 will work
       clearMarkers() %>%
       clearControls() %>%
       #clearGroup(group = "greenInf") %>%
-      addCircleMarkers(data = subs, lng = ~LON, lat = ~LAT, radius = 0.5, color = ~arrpal(Selected)) %>%
-      addLegend(position = "topright" , pal= arrpal, values = subs$Selected, title = "Group")
+      addCircleMarkers(data = LAPD, lng = ~LON, lat = ~LAT, radius = 0.5, color = ~arrpal(Selected)) %>%
+      addLegend(position = "topright" , pal= arrpal, values =LAPD$Selected, title = "Group")
   })
   
   
