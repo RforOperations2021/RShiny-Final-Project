@@ -162,7 +162,7 @@ server <- function(input, output) {
     ifelse(input$time==T, "date", "week")
   })
   output$covid_time <- renderPlotly({
-    ggplot(data = LAPD_subset_COVID(), aes_string(x = timeval(), group=input$group, color=input$group)) +
+    ggplot(data = LAPD_subset_COVID(), aes_string(x = timeval(), group=paste0("`",input$group,"`"), color=paste0("`",input$group,"`"))) +
       geom_point(stat='count') +
       geom_line(stat='count', alpha=0.3) +
       geom_text(aes(label=stat(count)), stat='count', nudge_y=5) +
@@ -174,7 +174,7 @@ server <- function(input, output) {
   })
   
   output$covid_group <- renderPlotly({
-    ggplot(data = LAPD_subset_COVID(), aes_string(x = input$group)) +
+    ggplot(data = LAPD_subset_COVID(), aes_string(x = paste0("`",input$group,"`"))) +
       geom_bar() +
       geom_text(aes(label=stat(count)), stat='count', nudge_y=100) +
       labs(x = input$group,
@@ -223,7 +223,7 @@ server <- function(input, output) {
   # Protest tab -------------------------------------------------------
   
   output$protest_time <- renderPlotly({
-    ggplot(data = LAPD_subset_PROTEST(), aes_string(x = timeval(), group=input$group, color=input$group)) +
+    ggplot(data = LAPD_subset_PROTEST(), aes_string(x = timeval(), group=paste0("`",input$group,"`"), color=paste0("`",input$group,"`"))) +
       geom_point(stat='count') +
       geom_line(stat='count', alpha=0.3) +
       geom_text(aes(label=stat(count)), stat='count', nudge_y=5) +
@@ -235,7 +235,7 @@ server <- function(input, output) {
   })
   
   output$protest_group <- renderPlotly({
-    ggplot(data = LAPD_subset_PROTEST(), aes_string(x = input$group)) +
+    ggplot(data = LAPD_subset_PROTEST(), aes_string(x = paste0("`",input$group,"`"))) +
       geom_bar() +
       geom_text(aes(label=stat(count)), stat='count', nudge_y=100) +
       labs(x = input$group,
