@@ -35,6 +35,8 @@ sidebar <- dashboardSidebar(
     # Menu Items ----------------------------------------------
     menuItem("Beginning of COVID-19", icon = icon("bar-chart"), tabName = "covid"),
     menuItem("Police Brutality Protests", icon = icon("bar-chart"), tabName = "protest"),
+    # one more menu item
+    menuItem("Maps", icon = icon("map-marked-alt"), tabName = "maps"),
     
     # Select which areas to include ------------------------
     pickerInput(inputId = "selected_hood",
@@ -57,8 +59,19 @@ sidebar <- dashboardSidebar(
                 onLabel= c("date" = "Day"), 
                 offLabel= c("week"= "Week")), 
     
-    # one more menu item
-    menuItem("Maps", icon = icon("map-marked-alt"), tabName = "maps")
+    
+    
+      sliderInput("range",
+                  "Map time range:",
+                  min = min(LAPD$date),
+                  max = max(LAPD$date),
+                  value= c(as.Date("2020-05-18","%Y-%m-%d"),as.Date("2020-06-07","%Y-%m-%d")),
+                  timeFormat="%Y-%m-%d"),
+    
+    # Write filtered data as csv ------------------------------------------
+    actionButton(inputId = "write_csv", 
+                 label = "Write CSV")
+    
     
   )
 )
@@ -171,7 +184,12 @@ server <- function(input, output) {
   
   LAPD_subset <- reactive({
     req(input$selected_hood) # ensure availablity of value before proceeding
-    filter(LAPD, `Area Name` %in% input$selected_hood)
+    filter(LAPD, `Area Name` %in% input$selected_hood & date > input$range[1] & date <input$range[2])
+    # if(input$time == TRUE){
+    #   filter(LAPD, `Area Name` %in% input$selected_hood & date > input$range[1] & date <input$range[2])
+    # }else{
+    #   filter(LAPD, `Area Name` %in% input$selected_hood & week > input$range[1] & week <input$range[2])
+    # }
   })
   
   # Covid tab --------------------------------------------------------
@@ -321,6 +339,29 @@ server <- function(input, output) {
       addCircleMarkers(data = LAPD, lng = ~LON, lat = ~LAT, radius = 1, clusterOptions = markerClusterOptions()) 
     
   })
+  
+  # Write sampled data as csv ---------------------------------------
+  observeEvent(eventExpr = input$write_csv, 
+               handlerExpr = {
+                 filename <- paste0("LAPD_", str_replace_all(Sys.time(), ":|\ ", "_"), ".csv")
+                 write.csv(LAPD_subset(), file = filename, row.names = FALSE) 
+               })
+  # # Observer for the date input
+  # observe(
+  # if(input$time == TRUE){
+  #   sliderInput("range",
+  #               "Time range:",
+  #               min = min(LAPD$date),
+  #               max = max(LAPD$date),
+  #               value= c(as.Date("2020-05-18","%Y-%m-%d"),as.Date("2020-06-07","%Y-%m-%d")),
+  #               timeFormat="%Y-%m-%d")
+  # }else{
+  #   sliderInput("range",
+  #               "Map time range:",
+  #               min = min(LAPD$week),
+  #               max = max(LAPD$week),
+  #               value= c(21,23))
+  # })
   
 }
 
